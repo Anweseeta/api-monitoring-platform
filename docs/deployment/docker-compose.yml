@@ -1,0 +1,61 @@
+# Docker for local full-stack runs.
+#
+# The backend/ and frontend/ sources are owned by other builders, so the
+# Dockerfiles live here as `backend.Dockerfile` / `frontend.Dockerfile`.
+# To build standalone images, copy each file into place:
+#
+#   cp docs/deployment/backend.Dockerfile  backend/Dockerfile
+#   cp docs/deployment/frontend.Dockerfile frontend/Dockerfile
+#
+# Then:
+#   docker compose -f docs/deployment/docker-compose.yml up --build
+#
+# Services:
+#   mongo     → MongoDB 7 on localhost:27017 (data persisted in `mongo-data` volume)
+#   backend   → FastAPI on localhost:8000
+#   frontend  → production build served by nginx on localhost:80
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: apm-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: docs/deployment/backend.Dockerfile
+    container_name: apm-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    env_file:
+      - ../../.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      DATABASE_NAME: api_monitoring
+      FRONTEND_URL: http://localhost
+      MONITOR_ALLOW_LOOPBACK: "true" # local dev only; false in production
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: docs/deployment/frontend.Dockerfile
+      args:
+        # Vite bakes VITE_* vars into the bundle at BUILD time
+        VITE_API_URL: http://localhost:8000
+    container_name: apm-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
