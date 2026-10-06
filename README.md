@@ -2,6 +2,9 @@
 
 A full-stack observability app for watching REST APIs: schedule synthetic health checks, collect latency/status metrics, and automatically track outages as incidents with notifications.
 
+## Live link 
+https://api-monitoring-platform-beta.vercel.app/login 
+
 ## The problem
 
 Services fail silently. A 500 on your payments endpoint at 2am goes unnoticed until customers complain, and by the time someone looks at logs, the timeline of "when did it start, how long was it down, what did latency look like before" is gone.
